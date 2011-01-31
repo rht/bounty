@@ -1,6 +1,6 @@
 import sqlite3
 import os,sys
-from bottle import route, run
+from bottle import route, run, view
 from bottle import request, response
 
 @route('/todo')
@@ -12,10 +12,12 @@ def todo_list():
     return str(result)
 
 @route('/get')
+@view('hello_template')
 def display_forum():
     forum_id = request.GET.get('id')
     page = request.GET.get('page', '1')
-    return 'Forum ID: %s (page %s)' % (forum_id, page)
+    #return 'Forum ID: %s (page %s)' % (forum_id, page)
+    return dict(username=forum_id)
 
 @route('/dump_requests')
 def todo_list():
@@ -43,7 +45,10 @@ def ls():
     f = os.popen("php db.php")
     return f.read()
 
-
+@route('/hello/:name')
+@view('hello_template')
+def hello(name):
+    return dict(username=name)
 
 
 
