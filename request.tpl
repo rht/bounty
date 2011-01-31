@@ -6,17 +6,16 @@
 <title>Google Maps JavaScript API v3 Example: Event Closure</title>
 <link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.4.min.js"> </script>
-<link rel="stylesheet" href="style.css" />
 <script type ="text/javascript" src="http://code.google.com/apis/gears/gears_init.js"> </script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
-
 <script type="text/javascript">
-
 var map;
 var endMarker;
 //var initialLocation;
 var browserSupportFlag =  new Boolean();
-var startMarker;
+var siberia = new google.maps.LatLng(60, 105);
+var newyork = new google.maps.LatLng(40.69847032728747, -73.9514422416687);
+
 
 function initialize() {
   var mit = new google.maps.LatLng(42.3584279, -71.0950);
@@ -40,6 +39,9 @@ function initialize() {
       map.setCenter(initialLocation);
       placeStartMarker(initialLocation);
   	console.log("dsfafd"+initialLocation);
+    $.get('tasks',{lat:intialLocation.lat,lng:intialLocation.lng},function(data){
+            $('html').html(data);
+        })
     }, function() {
       handleNoGeolocation(browserSupportFlag);
     });
@@ -50,7 +52,6 @@ function initialize() {
     geo.getCurrentPosition(function(position) {
       initialLocation = new google.maps.LatLng(position.latitude,position.longitude);
       map.setCenter(initialLocation);
-  	console.log("dsfafd"+initialLocation);
     }, function() {
       handleNoGeoLocation(browserSupportFlag);
     });
@@ -139,16 +140,14 @@ function send(){
 		console.log("end:  " + endMarker.position);
 		console.log("end:  " + endMarker.position.lat());
 		console.log("end:  " + endMarker.position.lng());
-    	$.get("/submit",{
+    	$.get("/submit_location",{
    			start_lat: startMarker.position.lat(),
        		start_long: startMarker.position.lng(),
         	end_lat: endMarker.position.lat(),
         	end_long: endMarker.position.lng(),
-        	description: document.getElementById("txt1").value,
-            username: document.getElementById("username").value
+        	description: document.getElementById("txt1").value
     	})
 	}
-    alert('Your request has been submitted!');
 }
 
 </script>
@@ -161,27 +160,16 @@ width:500px;
 height:10px;
 width:200px;
 }
-#txt2{
-height:10px;
-width:200px;
-}
-#txt3{
-height:10px;
-width:200px;
-}
+
 </style>
 
 
 </head>
 <body onload="initialize()">
-<h1>Welcome {{username}} </h1>
   <div id="map_canvas"></div>
  
-  <div>
-  Name: <input id="username" type="text" />
-  <br/>
+  <div> 
   Description of Delivery: <input type = "text" id = "txt1">  </input>
-
   </div>
   
   <div>

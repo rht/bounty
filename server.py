@@ -2,11 +2,13 @@ import sqlite3
 import os,sys
 from bottle import route, run, view, template
 from bottle import request, response
-from db import insert_table
+from db import insert_table, get_username,nearestbounty
 
 @route('/')
 def index():
-    return template('index.tpl')
+    uid = 500
+    name = get_username(uid)
+    return template('index.tpl',username=name)
 
 
 @route('/todo')
@@ -43,13 +45,13 @@ def submit_location():
 
 @route('submit')
 def submit():
-    uid = 500
     start_lat = request.GET.get('start_lat')
     start_long = request.GET.get('start_long')
     end_lat = request.GET.get('end_lat')
     end_long = request.GET.get('end_long')
     description = request.GET.get('description')
-    insert_table(float(end_lat),float(end_long),float(start_lat),float(start_long),description,uid)
+    username = request.GET.get('username')
+    insert_table(float(end_lat),float(end_long),float(start_lat),float(start_long),description,username)
     return "successfully updated"
 
 
@@ -83,5 +85,39 @@ def hello(name):
     
 
 
+@route('tasks')
+def tasks():
+    string = ''
+    lat = request.GET.get('lat')
+    lng = request.GET.get('lng')
+    data = nearestbounty(20,20)
 
-run()
+    for entry in data:
+        string += template('task.tpl',username=entry[0],description=entry[1])
+    return htmlize(string)
+
+
+
+def htmlize(sth):
+
+    string_1 = '''
+    <head>
+<link rel="stylesheet" href="style.css" />
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.4.min.js"> </script>
+
+    </head>
+
+    <body>
+    <div class='task list'>
+
+    '''
+
+    string_2='''
+    </div>
+    <body>
+
+    '''
+
+    return string_1 + sth + string_2
+
+run(host='18.111.48.173', port=8080)

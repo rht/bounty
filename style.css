@@ -1,3 +1,25 @@
 body{
+    margin:0px;
+    padding:0px;
+}
+.task.list{
+    font-size:30px;
+    }
 
+
+
+.task.entry{
+    border:solid 1px black;
+}
+
+.task.user{
+    background:#8888cc;
+    font-family:sans-serif;
+}
+
+.task.description{
+    background:#6666dd;
+    font-family:sans-serif;
+    font-size:80%;
+    padding-left:5px;
 }
