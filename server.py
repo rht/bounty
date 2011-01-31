@@ -1,7 +1,12 @@
 import sqlite3
 import os,sys
-from bottle import route, run, view
+from bottle import route, run, view, template
 from bottle import request, response
+
+@route('/')
+def index():
+    return template('index.tpl')
+
 
 @route('/todo')
 def todo_list():
@@ -27,6 +32,15 @@ def todo_list():
     result = c.fetchall()
     return str(result)
 
+@route('/submit_location')
+def submit_location():
+    start_lat = request.GET.get('start_lat')
+    start_long = request.GET.get('start_long')
+    end_lat = request.GET.get('end_lat')
+    end_long = request.GET.get('end_long')
+    return str(start_lat) + '   ' + str(start_long) +'   '+ str(end_lat) + '   ' + str(end_long) 
+
+
 
 @route('ls')
 def ls():
@@ -49,6 +63,13 @@ def ls():
 @view('hello_template')
 def hello(name):
     return dict(username=name)
+
+@route('/:name')
+def hello(name):
+    return template(name)
+
+
+
 
 
 
