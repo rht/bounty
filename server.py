@@ -2,6 +2,7 @@ import sqlite3
 import os,sys
 from bottle import route, run, view, template
 from bottle import request, response
+from db import insert_table
 
 @route('/')
 def index():
@@ -40,6 +41,17 @@ def submit_location():
     end_long = request.GET.get('end_long')
     return str(start_lat) + '   ' + str(start_long) +'   '+ str(end_lat) + '   ' + str(end_long) 
 
+@route('submit')
+def submit():
+    uid = 500
+    start_lat = request.GET.get('start_lat')
+    start_long = request.GET.get('start_long')
+    end_lat = request.GET.get('end_lat')
+    end_long = request.GET.get('end_long')
+    description = request.GET.get('description')
+    insert_table(float(end_lat),float(end_long),float(start_lat),float(start_long),description,uid)
+    return "successfully updated"
+
 
 
 @route('ls')
@@ -68,8 +80,7 @@ def hello(name):
 def hello(name):
     return template(name)
 
-
-
+    
 
 
 
