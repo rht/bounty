@@ -1,17 +1,42 @@
 import sqlite3
-import os,sys
-from bottle import route, run, view, template
-from bottle import request, response
-from db import insert_table, get_username,nearestbounty
+from flask import Flask, request, render_template
+from geopy import distance, Point
 
-@route('/')
+app = Flask(__name__)
+
+def nearestbounty(hunterlat,hunterlng):
+    hunterlocation = Point(''.join([str(hunterlat),";",str(hunterlng)]))
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
+    c.execute('''select * from requests''')
+    requestslist = c.fetchall()
+    distancelist = []
+    for row in requestslist:
+        #row: id, descript, status, food, request, uid
+        #     0      1        2       3     4       5
+        if row[2] == 1:
+            #foodlat, foodlng = c.execute('''select lat,long from locations where id=? ''',(row[3],))
+            c.execute('''select lat,long from locations where id=? ''',(row[3],))
+            foodlat, foodlng = c.fetchone()
+            foodloc = Point(''.join( [str(foodlat),";",str(foodlng)] ))
+            distancelist.append([get_username(int(row[5])),row[1],distance.distance(hunterlocation,foodloc).miles])
+    return sorted(distancelist,key=lambda x: x[2])
+
+@app.route('/')
 def index():
     uid = 500
-    name = get_username(uid)
-    return template('index.tpl',username=name)
+    conn = sqlite3.connect('data.db').cursor()
+    c.execute('select name from user where id='+uid)
+    name =  c.fetchone[0]
+
+    #or simply with json
+    #users = json.load(open('user.json'))
+    #name = users[str(uid)]
+
+    return render_template('templates/index.html',username=name)
 
 
-@route('/todo')
+@app.route('/todo')
 def todo_list():
     conn = sqlite3.connect('todo.db')
     c = conn.cursor()
@@ -19,105 +44,72 @@ def todo_list():
     result = c.fetchall()
     return str(result)
 
-@route('/get')
-@view('hello_template')
+@app.route('/get')
 def display_forum():
-    forum_id = request.GET.get('id')
-    page = request.GET.get('page', '1')
-    #return 'Forum ID: %s (page %s)' % (forum_id, page)
-    return dict(username=forum_id)
+    forum_id = request.args['id']
+    page = request.args['page', '1']
+    return render_template('templates/hello_template.html', username=forum_id)
 
-@route('/dump_requests')
+@app.route('/dump_requests')
 def todo_list():
-    conn = sqlite3.connect('hack.db')
+    conn = sqlite3.connect('data.db')
     c = conn.cursor()
     c.execute("SELECT * FROM requests ")
     result = c.fetchall()
     return str(result)
 
-@route('/submit_location')
+@app.route('/submit_location')
 def submit_location():
-    start_lat = request.GET.get('start_lat')
-    start_long = request.GET.get('start_long')
-    end_lat = request.GET.get('end_lat')
-    end_long = request.GET.get('end_long')
+    start_lat = request.args['start_lat']
+    start_long = request.args['start_long']
+    end_lat = request.args['end_lat']
+    end_long = request.args['end_long']
     return str(start_lat) + '   ' + str(start_long) +'   '+ str(end_lat) + '   ' + str(end_long) 
 
-@route('submit')
+@app.route('submit')
 def submit():
-    start_lat = request.GET.get('start_lat')
-    start_long = request.GET.get('start_long')
-    end_lat = request.GET.get('end_lat')
-    end_long = request.GET.get('end_long')
-    description = request.GET.get('description')
-    username = request.GET.get('username')
-    insert_table(float(end_lat),float(end_long),float(start_lat),float(start_long),description,username)
+    start_lat = float(request.args['start_lat'])
+    start_long = float(request.args['start_long'])
+    end_lat = float(request.args['end_lat'])
+    end_long = float(request.args['end_long'])
+    description = request.args['description']
+    username = request.args['username']
+
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
+    c.execute('insert into user values (null,%s)'%username)
+    conn.commit()
+    c.execute('select id from "user" where name=%s'%username)
+    u_id=c.fetchone()[0]
+    c = conn.cursor()
+    c.execute('insert into locations values (null,?,?,?)',(end_lat,end_long,""))
+    conn.commit()
+    c.execute('select id from "locations" where lat=? and long=? ',(end_lat,end_long))
+    f_id=c.fetchone()[0]
+    c.execute('insert into locations values (null,?,?,?)',(start_lat,start_long,""))
+    conn.commit()
+    c.execute('select id from "locations" where lat=? and long=? ',(start_lat,start_long))
+    e_id=c.fetchone()[0]
+    c.execute('insert into requests values (null,?,1,?,?,?)',(description,f_id,e_id,u_id))
+    conn.commit()
+
     return "successfully updated"
 
-
-
-@route('ls')
-def ls():
-    f = os.popen("ls")
-    return f.read()
-
-
-@route('php')
-def ls():
-    f = os.popen("php test.php")
-    return f.read()
-
-
-@route('phpdb')
-def ls():
-    f = os.popen("php db.php")
-    return f.read()
-
-@route('/hello/:name')
-@view('hello_template')
+@app.route('/hello/:name')
 def hello(name):
-    return dict(username=name)
+    return render_template('templates/hello_template.html',username=name)
 
-@route('/:name')
+@app.route('/:name')
 def hello(name):
-    return template(name)
+    return render_template(name)
 
-    
-
-
-@route('tasks')
+@app.route('tasks')
 def tasks():
     string = ''
-    lat = request.GET.get('lat')
-    lng = request.GET.get('lng')
+    lat = request.args['lat']
+    lng = request.args['lng']
     data = nearestbounty(20,20)
 
     for entry in data:
         string += template('task.tpl',username=entry[0],description=entry[1])
-    return htmlize(string)
-
-
-
-def htmlize(sth):
-
-    string_1 = '''
-    <head>
-<link rel="stylesheet" href="style.css" />
-    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.4.min.js"> </script>
-
-    </head>
-
-    <body>
-    <div class='task list'>
-
-    '''
-
-    string_2='''
-    </div>
-    <body>
-
-    '''
-
-    return string_1 + sth + string_2
-
-run(host='18.111.48.173', port=8080)
+    return string
